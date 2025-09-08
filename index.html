@@ -28,7 +28,6 @@
             font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
         }
 
-        /* Stage: use iOS-safe viewport height and hide any sprite bleed */
         main.stage {
             position: relative;
             height: 100svh;
@@ -37,7 +36,6 @@
             background: var(--sky);
         }
 
-        /* Title is decorative; never intercepts taps */
         h1 {
             position: absolute;
             top: 16px;
@@ -54,7 +52,6 @@
             z-index: 1;
         }
 
-        /* Ground: big ellipse anchored to the bottom so the bunny never floats */
         #grass {
             position: absolute;
             left: 50%;
@@ -68,8 +65,6 @@
             pointer-events: none;
         }
 
-        /* Bunny wrapper: fixes layout size so image swaps don't recenter the scene,
-       and masks any PNG edge seams from the munch frames. */
         .bunny-wrap {
             position: absolute;
             left: 50%;
@@ -78,16 +73,15 @@
             width: min(60vmin, 340px);
             aspect-ratio: 1/1;
             overflow: hidden;
-            /* hides any hard edges in frame PNGs */
             display: grid;
             place-items: end center;
             z-index: 2;
+            border-radius: 12%;
+            /* masks hard PNG edges */
         }
 
-        /* Actual bunny image positioned inside a fixed-size wrap */
         #bunny {
             position: relative;
-            /* stays inside wrapper */
             width: 100%;
             height: auto;
             user-select: none;
@@ -95,10 +89,8 @@
             -webkit-touch-callout: none;
             transition: transform 160ms ease;
             transform: translateZ(0);
-            /* ensure transforms don't trigger layout */
         }
 
-        /* Animations affect only the bunny bitmap, not layout */
         .hop {
             animation: hop 350ms ease;
         }
@@ -162,15 +154,14 @@
         <h1 aria-hidden="true">Jolie’s Phone Bunny</h1>
         <div id="grass" aria-hidden="true"></div>
 
-        <!-- Fixed-size mask prevents “image edge” and layout reflow -->
         <div class="bunny-wrap">
             <img id="bunny" src="img/bunny-idle.png" alt="Bunny" />
         </div>
 
-        <!-- Sounds (keep your filenames) -->
-        <audio id="snd-hop" src="hop.mp3" preload="auto"></audio>
-        <audio id="snd-squeak" src="squeak.mp3" preload="auto"></audio>
-        <audio id="snd-crunch" src="crunch.mp3" preload="auto"></audio>
+        <!-- Sounds: now explicitly in /sounds/ -->
+        <audio id="snd-hop" src="sounds/hop.mp3" preload="auto"></audio>
+        <audio id="snd-squeak" src="sounds/squeak.mp3" preload="auto"></audio>
+        <audio id="snd-crunch" src="sounds/crunch.mp3" preload="auto"></audio>
     </main>
 
     <script>
@@ -183,7 +174,10 @@
 
         function playWithCap(audioEl, capMs) {
             try { audioEl.currentTime = 0; } catch { }
-            audioEl.play().catch(() => { });
+            const p = audioEl.play();
+            if (p && typeof p.catch === "function") {
+                p.catch(err => console.error("Audio play failed:", audioEl.id, err));
+            }
             if (capMs && Number.isFinite(capMs)) {
                 setTimeout(() => {
                     audioEl.pause();
@@ -217,7 +211,7 @@
             setTimeout(() => { bunny.classList.remove('munch'); toIdle(); }, 2000);
         }
 
-        // Gesture logic unchanged
+        // Gestures
         let tapTimer = null; const DOUBLE_MS = 220;
         let pressTimer = null; const LONG_MS = 420;
         let longPressTriggered = false;
@@ -247,13 +241,16 @@
         bunny.addEventListener('pointerleave', () => clearTimeout(pressTimer));
         bunny.addEventListener('pointercancel', () => clearTimeout(pressTimer));
 
-        // iOS: mitigate double-tap zoom from firing alongside your spin
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', e => {
-            const now = Date.now();
-            if (now - lastTouchEnd <= 300) e.preventDefault();
-            lastTouchEnd = now;
-        }, { passive: false });
+        // iOS unlock audio once after first gesture
+        function unlockAudioOnce() {
+            [sndHop, sndSqueak, sndCrunch].forEach(a => {
+                try { a.play().then(() => a.pause()); } catch { }
+            });
+            window.removeEventListener('touchstart', unlockAudioOnce);
+            window.removeEventListener('mousedown', unlockAudioOnce);
+        }
+        window.addEventListener('touchstart', unlockAudioOnce, { passive: true });
+        window.addEventListener('mousedown', unlockAudioOnce);
 
         // Service worker
         if ('serviceWorker' in navigator) {
