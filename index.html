@@ -12,6 +12,7 @@
             --sky: #b3e5fc;
             --grass: #c8e6c9;
             --grass2: #9ccc65;
+            --pink: #ff69b4;
         }
 
         * {
@@ -43,8 +44,9 @@
             right: 0;
             text-align: center;
             font-family: "Comic Sans MS", "Comic Neue", cursive, system-ui;
-            font-size: clamp(24px, 6vw, 48px);
-            color: #ff69b4;
+            font-size: clamp(36px, 9vw, 72px);
+            /* bigger title */
+            color: var(--pink);
             text-shadow: 2px 2px 0 #fff, -2px 2px 0 #fff, 2px -2px 0 #fff, -2px -2px 0 #fff;
             letter-spacing: 2px;
             pointer-events: none;
@@ -77,7 +79,6 @@
             place-items: end center;
             z-index: 2;
             border-radius: 12%;
-            /* masks hard PNG edges */
         }
 
         #bunny {
@@ -88,24 +89,26 @@
             -webkit-user-drag: none;
             -webkit-touch-callout: none;
             transition: transform 160ms ease;
-            transform: translateZ(0);
+            transform: scale(0.9);
+            transform-origin: center bottom;
         }
 
+        /* Action animations */
         .hop {
             animation: hop 350ms ease;
         }
 
         @keyframes hop {
             0% {
-                transform: translateY(0)
+                transform: scale(1.0) translateY(0)
             }
 
             35% {
-                transform: translateY(-12vmin)
+                transform: scale(1.0) translateY(-12vmin)
             }
 
             100% {
-                transform: translateY(0)
+                transform: scale(1.0) translateY(0)
             }
         }
 
@@ -115,11 +118,11 @@
 
         @keyframes spin {
             0% {
-                transform: rotate(0deg)
+                transform: scale(1.0) rotate(0deg)
             }
 
             100% {
-                transform: rotate(360deg)
+                transform: scale(1.0) rotate(360deg)
             }
         }
 
@@ -131,20 +134,74 @@
 
             0%,
             100% {
-                transform: translateY(0)
+                transform: scale(1.0) translateY(0)
             }
 
             25% {
-                transform: translateY(-1vmin)
+                transform: scale(1.0) translateY(-1vmin)
             }
 
             50% {
-                transform: translateY(0.6vmin)
+                transform: scale(1.0) translateY(0.6vmin)
             }
 
             75% {
-                transform: translateY(-0.6vmin)
+                transform: scale(1.0) translateY(-0.6vmin)
             }
+        }
+
+        /* Run forward once */
+        .runforward {
+            animation: runforward 400ms ease forwards;
+        }
+
+        @keyframes runforward {
+            0% {
+                transform: scale(0.9) translateY(0);
+            }
+
+            70% {
+                transform: scale(1.05) translateY(-3vh);
+            }
+
+            100% {
+                transform: scale(1.0) translateY(0);
+            }
+        }
+
+        /* Idle twitch */
+        .twitch {
+            animation: twitch 160ms ease;
+        }
+
+        @keyframes twitch {
+            0% {
+                transform: scale(1.0) rotate(0deg)
+            }
+
+            50% {
+                transform: scale(1.0) rotate(-1.5deg)
+            }
+
+            100% {
+                transform: scale(1.0) rotate(0deg)
+            }
+        }
+
+        /* Carrot button */
+        #btn-carrot {
+            position: absolute;
+            right: 16px;
+            bottom: 16px;
+            border: none;
+            border-radius: 9999px;
+            padding: 12px 14px;
+            font-size: 18px;
+            font-weight: 700;
+            background: var(--pink);
+            color: #fff;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, .2);
+            z-index: 3;
         }
     </style>
 </head>
@@ -158,11 +215,13 @@
             <img id="bunny" src="img/bunny-idle.png" alt="Bunny" />
         </div>
 
-        <!-- Sounds: now explicitly in /sounds/ -->
+        <!-- Carrot button -->
+        <button id="btn-carrot" aria-label="Give carrot">🥕</button>
+
+        <!-- Sounds -->
         <audio id="snd-hop" src="Sounds/hop.mp3" preload="auto"></audio>
         <audio id="snd-squeak" src="Sounds/squeak.mp3" preload="auto"></audio>
         <audio id="snd-crunch" src="Sounds/crunch.mp3" preload="auto"></audio>
-
     </main>
 
     <script>
@@ -170,6 +229,7 @@
         const sndHop = document.getElementById('snd-hop');
         const sndSqueak = document.getElementById('snd-squeak');
         const sndCrunch = document.getElementById('snd-crunch');
+        const btnCarrot = document.getElementById('btn-carrot');
 
         function toIdle() { bunny.src = 'img/bunny-idle.png'; }
 
@@ -187,7 +247,17 @@
             }
         }
 
+        // One-time run forward
+        let hasRunForward = false;
+        function runForwardExcitedOnce() {
+            if (hasRunForward) return;
+            hasRunForward = true;
+            bunny.classList.add('runforward');
+            setTimeout(() => bunny.classList.remove('runforward'), 400);
+        }
+
         function hop() {
+            runForwardExcitedOnce();
             bunny.src = 'img/bunny-hop.png';
             playWithCap(sndHop, 500);
             bunny.classList.remove('spin', 'munch');
@@ -196,6 +266,7 @@
         }
 
         function spin() {
+            runForwardExcitedOnce();
             bunny.src = 'img/bunny-spin.png';
             playWithCap(sndSqueak, 700);
             bunny.classList.remove('hop', 'munch');
@@ -204,12 +275,13 @@
         }
 
         function munch() {
+            runForwardExcitedOnce();
             bunny.src = 'img/bunny-munch1.png';
             playWithCap(sndCrunch, 1200);
             bunny.classList.remove('hop', 'spin');
             bunny.classList.add('munch');
-            setTimeout(() => { bunny.src = 'img/bunny-munch2.png'; }, 1000);
-            setTimeout(() => { bunny.classList.remove('munch'); toIdle(); }, 2000);
+            setTimeout(() => { bunny.src = 'img/bunny-munch2.png'; }, 500);
+            setTimeout(() => { bunny.classList.remove('munch'); toIdle(); }, 1200);
         }
 
         // Gestures
@@ -242,7 +314,35 @@
         bunny.addEventListener('pointerleave', () => clearTimeout(pressTimer));
         bunny.addEventListener('pointercancel', () => clearTimeout(pressTimer));
 
-        // iOS unlock audio once after first gesture
+        // Carrot button
+        btnCarrot.addEventListener('click', () => {
+            runForwardExcitedOnce();
+            bunny.classList.add('hop'); setTimeout(() => bunny.classList.remove('hop'), 250);
+            bunny.src = 'img/bunny-munch1.png';
+            playWithCap(sndCrunch, 1200);
+            setTimeout(() => { bunny.src = 'img/bunny-munch2.png'; }, 500);
+            setTimeout(() => { toIdle(); }, 1200);
+        });
+
+        // Idle twitch
+        function isAnimating() {
+            return bunny.classList.contains('hop')
+                || bunny.classList.contains('spin')
+                || bunny.classList.contains('munch')
+                || bunny.classList.contains('runforward');
+        }
+        function scheduleTwitch() {
+            setTimeout(() => {
+                if (!isAnimating()) {
+                    bunny.classList.add('twitch');
+                    setTimeout(() => bunny.classList.remove('twitch'), 160);
+                }
+                scheduleTwitch();
+            }, 5000 + Math.random() * 5000);
+        }
+        scheduleTwitch();
+
+        // Unlock audio once
         function unlockAudioOnce() {
             [sndHop, sndSqueak, sndCrunch].forEach(a => {
                 try { a.play().then(() => a.pause()); } catch { }
