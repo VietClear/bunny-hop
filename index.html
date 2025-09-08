@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>Bunny Hop</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#ff69b4" />
+    <style>
+        :root {
+            --sky: #b3e5fc;
+            --grass: #c8e6c9;
+            --grass2: #9ccc65;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            background: var(--sky);
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        }
+
+        /* Stage: use iOS-safe viewport height and hide any sprite bleed */
+        main.stage {
+            position: relative;
+            height: 100svh;
+            width: 100%;
+            overflow: hidden;
+            background: var(--sky);
+        }
+
+        /* Title is decorative; never intercepts taps */
+        h1 {
+            position: absolute;
+            top: 16px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-family: "Comic Sans MS", "Comic Neue", cursive, system-ui;
+            font-size: clamp(24px, 6vw, 48px);
+            color: #ff69b4;
+            text-shadow: 2px 2px 0 #fff, -2px 2px 0 #fff, 2px -2px 0 #fff, -2px -2px 0 #fff;
+            letter-spacing: 2px;
+            pointer-events: none;
+            user-select: none;
+            z-index: 1;
+        }
+
+        /* Ground: big ellipse anchored to the bottom so the bunny never floats */
+        #grass {
+            position: absolute;
+            left: 50%;
+            bottom: -18vh;
+            transform: translateX(-50%);
+            width: 150vw;
+            height: 60vh;
+            border-radius: 50%;
+            background: radial-gradient(ellipse at center, var(--grass) 0%, var(--grass2) 85%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Bunny wrapper: fixes layout size so image swaps don't recenter the scene,
+       and masks any PNG edge seams from the munch frames. */
+        .bunny-wrap {
+            position: absolute;
+            left: 50%;
+            bottom: 10vh;
+            transform: translateX(-50%);
+            width: min(60vmin, 340px);
+            aspect-ratio: 1/1;
+            overflow: hidden;
+            /* hides any hard edges in frame PNGs */
+            display: grid;
+            place-items: end center;
+            z-index: 2;
+        }
+
+        /* Actual bunny image positioned inside a fixed-size wrap */
+        #bunny {
+            position: relative;
+            /* stays inside wrapper */
+            width: 100%;
+            height: auto;
+            user-select: none;
+            -webkit-user-drag: none;
+            -webkit-touch-callout: none;
+            transition: transform 160ms ease;
+            transform: translateZ(0);
+            /* ensure transforms don't trigger layout */
+        }
+
+        /* Animations affect only the bunny bitmap, not layout */
+        .hop {
+            animation: hop 350ms ease;
+        }
+
+        @keyframes hop {
+            0% {
+                transform: translateY(0)
+            }
+
+            35% {
+                transform: translateY(-12vmin)
+            }
+
+            100% {
+                transform: translateY(0)
+            }
+        }
+
+        .spin {
+            animation: spin 450ms ease;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg)
+            }
+
+            100% {
+                transform: rotate(360deg)
+            }
+        }
+
+        .munch {
+            animation: munch 2000ms ease;
+        }
+
+        @keyframes munch {
+
+            0%,
+            100% {
+                transform: translateY(0)
+            }
+
+            25% {
+                transform: translateY(-1vmin)
+            }
+
+            50% {
+                transform: translateY(0.6vmin)
+            }
+
+            75% {
+                transform: translateY(-0.6vmin)
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="stage">
+        <h1 aria-hidden="true">Jolie’s Phone Bunny</h1>
+        <div id="grass" aria-hidden="true"></div>
+
+        <!-- Fixed-size mask prevents “image edge” and layout reflow -->
+        <div class="bunny-wrap">
+            <img id="bunny" src="img/bunny-idle.png" alt="Bunny" />
+        </div>
+
+        <!-- Sounds (keep your filenames) -->
+        <audio id="snd-hop" src="hop.mp3" preload="auto"></audio>
+        <audio id="snd-squeak" src="squeak.mp3" preload="auto"></audio>
+        <audio id="snd-crunch" src="crunch.mp3" preload="auto"></audio>
+    </main>
+
+    <script>
+        const bunny = document.getElementById('bunny');
+        const sndHop = document.getElementById('snd-hop');
+        const sndSqueak = document.getElementById('snd-squeak');
+        const sndCrunch = document.getElementById('snd-crunch');
+
+        function toIdle() { bunny.src = 'img/bunny-idle.png'; }
+
+        function playWithCap(audioEl, capMs) {
+            try { audioEl.currentTime = 0; } catch { }
+            audioEl.play().catch(() => { });
+            if (capMs && Number.isFinite(capMs)) {
+                setTimeout(() => {
+                    audioEl.pause();
+                    try { audioEl.currentTime = 0; } catch { }
+                }, capMs);
+            }
+        }
+
+        function hop() {
+            bunny.src = 'img/bunny-hop.png';
+            playWithCap(sndHop, 500);
+            bunny.classList.remove('spin', 'munch');
+            bunny.classList.add('hop');
+            setTimeout(() => { bunny.classList.remove('hop'); toIdle(); }, 350);
+        }
+
+        function spin() {
+            bunny.src = 'img/bunny-spin.png';
+            playWithCap(sndSqueak, 700);
+            bunny.classList.remove('hop', 'munch');
+            bunny.classList.add('spin');
+            setTimeout(() => { bunny.classList.remove('spin'); toIdle(); }, 450);
+        }
+
+        function munch() {
+            bunny.src = 'img/bunny-munch1.png';
+            playWithCap(sndCrunch, 1200);
+            bunny.classList.remove('hop', 'spin');
+            bunny.classList.add('munch');
+            setTimeout(() => { bunny.src = 'img/bunny-munch2.png'; }, 1000);
+            setTimeout(() => { bunny.classList.remove('munch'); toIdle(); }, 2000);
+        }
+
+        // Gesture logic unchanged
+        let tapTimer = null; const DOUBLE_MS = 220;
+        let pressTimer = null; const LONG_MS = 420;
+        let longPressTriggered = false;
+
+        function onPointerDown() {
+            longPressTriggered = false;
+            clearTimeout(pressTimer);
+            pressTimer = setTimeout(() => {
+                longPressTriggered = true;
+                clearTimeout(tapTimer); tapTimer = null;
+                munch();
+            }, LONG_MS);
+        }
+
+        function onPointerUp() {
+            clearTimeout(pressTimer);
+            if (longPressTriggered) return;
+            if (tapTimer) {
+                clearTimeout(tapTimer); tapTimer = null; spin();
+            } else {
+                tapTimer = setTimeout(() => { hop(); tapTimer = null; }, DOUBLE_MS);
+            }
+        }
+
+        bunny.addEventListener('pointerdown', onPointerDown);
+        bunny.addEventListener('pointerup', onPointerUp);
+        bunny.addEventListener('pointerleave', () => clearTimeout(pressTimer));
+        bunny.addEventListener('pointercancel', () => clearTimeout(pressTimer));
+
+        // iOS: mitigate double-tap zoom from firing alongside your spin
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', e => {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) e.preventDefault();
+            lastTouchEnd = now;
+        }, { passive: false });
+
+        // Service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./service-worker.js')
+                .then(() => console.log('Service Worker registered'))
+                .catch(err => console.log('SW registration failed', err));
+        }
+    </script>
+</body>
+
+</html>
