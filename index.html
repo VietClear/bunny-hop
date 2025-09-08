@@ -12,7 +12,6 @@
             --sky: #b3e5fc;
             --grass: #c8e6c9;
             --grass2: #9ccc65;
-            --pink: #ff69b4;
         }
 
         * {
@@ -45,8 +44,7 @@
             text-align: center;
             font-family: "Comic Sans MS", "Comic Neue", cursive, system-ui;
             font-size: clamp(36px, 9vw, 72px);
-            /* bigger title */
-            color: var(--pink);
+            color: #ff69b4;
             text-shadow: 2px 2px 0 #fff, -2px 2px 0 #fff, 2px -2px 0 #fff, -2px -2px 0 #fff;
             letter-spacing: 2px;
             pointer-events: none;
@@ -93,60 +91,60 @@
             transform-origin: center bottom;
         }
 
-        /* Action animations */
+        /* Animations */
         .hop {
             animation: hop 350ms ease;
         }
 
         @keyframes hop {
             0% {
-                transform: scale(1.0) translateY(0)
+                transform: translateY(0)
             }
 
             35% {
-                transform: scale(1.0) translateY(-12vmin)
+                transform: translateY(-12vmin)
             }
 
             100% {
-                transform: scale(1.0) translateY(0)
+                transform: translateY(0)
             }
         }
 
         .spin {
-            animation: spin 450ms ease;
+            animation: spin 450ms linear;
         }
 
         @keyframes spin {
             0% {
-                transform: scale(1.0) rotate(0deg)
+                transform: rotate(0deg)
             }
 
             100% {
-                transform: scale(1.0) rotate(360deg)
+                transform: rotate(360deg)
             }
         }
 
         .munch {
-            animation: munch 2000ms ease;
+            animation: munch 1200ms ease;
         }
 
         @keyframes munch {
 
             0%,
             100% {
-                transform: scale(1.0) translateY(0)
+                transform: translateY(0)
             }
 
             25% {
-                transform: scale(1.0) translateY(-1vmin)
+                transform: translateY(-1vmin)
             }
 
             50% {
-                transform: scale(1.0) translateY(0.6vmin)
+                transform: translateY(0.6vmin)
             }
 
             75% {
-                transform: scale(1.0) translateY(-0.6vmin)
+                transform: translateY(-0.6vmin)
             }
         }
 
@@ -176,15 +174,15 @@
 
         @keyframes twitch {
             0% {
-                transform: scale(1.0) rotate(0deg)
+                transform: rotate(0deg)
             }
 
             50% {
-                transform: scale(1.0) rotate(-1.5deg)
+                transform: rotate(-1.5deg)
             }
 
             100% {
-                transform: scale(1.0) rotate(0deg)
+                transform: rotate(0deg)
             }
         }
 
@@ -193,15 +191,32 @@
             position: absolute;
             right: 16px;
             bottom: 16px;
+            background: transparent;
             border: none;
-            border-radius: 9999px;
-            padding: 12px 14px;
-            font-size: 18px;
-            font-weight: 700;
-            background: var(--pink);
-            color: #fff;
-            box-shadow: 0 8px 18px rgba(0, 0, 0, .2);
+            font-size: 40px;
+            line-height: 1;
+            cursor: pointer;
             z-index: 3;
+            transition: transform 120ms ease;
+        }
+
+        /* Bounce on click */
+        #btn-carrot.bounce {
+            animation: carrotBounce 250ms ease;
+        }
+
+        @keyframes carrotBounce {
+            0% {
+                transform: scale(1);
+            }
+
+            40% {
+                transform: scale(1.25);
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
     </style>
 </head>
@@ -247,13 +262,16 @@
             }
         }
 
-        // One-time run forward
+        // Run forward only once
         let hasRunForward = false;
         function runForwardExcitedOnce() {
             if (hasRunForward) return;
             hasRunForward = true;
             bunny.classList.add('runforward');
-            setTimeout(() => bunny.classList.remove('runforward'), 400);
+            setTimeout(() => {
+                bunny.classList.remove('runforward');
+                bunny.style.transform = "scale(1.0)";
+            }, 400);
         }
 
         function hop() {
@@ -314,8 +332,11 @@
         bunny.addEventListener('pointerleave', () => clearTimeout(pressTimer));
         bunny.addEventListener('pointercancel', () => clearTimeout(pressTimer));
 
-        // Carrot button
+        // Carrot button → bounce + munch
         btnCarrot.addEventListener('click', () => {
+            btnCarrot.classList.add('bounce');
+            setTimeout(() => btnCarrot.classList.remove('bounce'), 250);
+
             runForwardExcitedOnce();
             bunny.classList.add('hop'); setTimeout(() => bunny.classList.remove('hop'), 250);
             bunny.src = 'img/bunny-munch1.png';
@@ -353,7 +374,6 @@
         window.addEventListener('touchstart', unlockAudioOnce, { passive: true });
         window.addEventListener('mousedown', unlockAudioOnce);
 
-        // Service worker
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./service-worker.js')
                 .then(() => console.log('Service Worker registered'))
