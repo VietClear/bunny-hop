@@ -49,7 +49,7 @@
             letter-spacing: 2px;
             pointer-events: none;
             user-select: none;
-            z-index: 1;
+            z-index: 10;
         }
 
         #grass {
@@ -75,7 +75,7 @@
             overflow: hidden;
             display: grid;
             place-items: end center;
-            z-index: 2;
+            z-index: 5;
             border-radius: 12%;
         }
 
@@ -89,9 +89,10 @@
             transition: transform 160ms ease;
             transform: scale(0.9);
             transform-origin: center bottom;
+            will-change: transform;
         }
 
-        /* Animations */
+        /* Action animations */
         .hop {
             animation: hop 350ms ease;
         }
@@ -167,22 +168,30 @@
             }
         }
 
-        /* Idle twitch */
+        /* Bigger idle twitch: side-to-side */
         .twitch {
-            animation: twitch 160ms ease;
+            animation: twitch 400ms ease;
         }
 
         @keyframes twitch {
             0% {
-                transform: rotate(0deg)
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-12px);
             }
 
             50% {
-                transform: rotate(-1.5deg)
+                transform: translateX(12px);
+            }
+
+            75% {
+                transform: translateX(-8px);
             }
 
             100% {
-                transform: rotate(0deg)
+                transform: translateX(0);
             }
         }
 
@@ -196,26 +205,25 @@
             font-size: 40px;
             line-height: 1;
             cursor: pointer;
-            z-index: 3;
+            z-index: 8;
             transition: transform 120ms ease;
         }
 
-        /* Bounce on click */
         #btn-carrot.bounce {
             animation: carrotBounce 250ms ease;
         }
 
         @keyframes carrotBounce {
             0% {
-                transform: scale(1);
+                transform: scale(1)
             }
 
             40% {
-                transform: scale(1.25);
+                transform: scale(1.25)
             }
 
             100% {
-                transform: scale(1);
+                transform: scale(1)
             }
         }
     </style>
@@ -356,7 +364,7 @@
             setTimeout(() => {
                 if (!isAnimating()) {
                     bunny.classList.add('twitch');
-                    setTimeout(() => bunny.classList.remove('twitch'), 160);
+                    setTimeout(() => bunny.classList.remove('twitch'), 400);
                 }
                 scheduleTwitch();
             }, 5000 + Math.random() * 5000);
